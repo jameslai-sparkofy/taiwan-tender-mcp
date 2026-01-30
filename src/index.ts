@@ -72,18 +72,20 @@ server.tool(
   }
 );
 
-// 工具 4: 依日期列出標案
+// 工具 4: 依日期列出標案（支援地區和關鍵字過濾）
 server.tool(
   "list_tenders_by_date",
-  "列出指定日期的所有標案公告。日期格式為 YYYYMMDD，例如：20260130",
+  "列出指定日期的標案公告。支援地區和關鍵字過濾，避免資料量過大。建議搭配 region 或 keyword 參數使用。",
   {
     date: z.string().describe("日期，格式 YYYYMMDD，例如：20260130"),
     type_filter: z.string().optional().describe("公告類型過濾，例如：公開招標公告、決標公告"),
-    limit: z.number().optional().default(30).describe("回傳筆數上限（預設 30）"),
+    region: z.string().optional().describe("地區過濾，例如：台北、台中、高雄、新北、桃園、台南等縣市名稱"),
+    keyword: z.string().optional().describe("標題關鍵字過濾，可用逗號分隔多個關鍵字，例如：裝修,整修,裝潢"),
+    limit: z.number().optional().default(50).describe("回傳筆數上限（預設 50）"),
   },
-  async ({ date, type_filter, limit }) => {
+  async ({ date, type_filter, region, keyword, limit }) => {
     try {
-      const result = await listByDate(date, type_filter, limit ?? 30);
+      const result = await listByDate(date, type_filter, limit ?? 50, region, keyword);
       return { content: [{ type: "text", text: result }] };
     } catch (error: any) {
       return { content: [{ type: "text", text: `查詢失敗: ${error.message}` }] };

@@ -312,38 +312,95 @@ export async function getTenderDetail(unitId, jobNumber) {
     output += `[查看原始公告](${link})\n`;
     return output;
 }
-// 依日期列出標案
-export async function listByDate(date, typeFilter, limit) {
+// 地區關鍵字對照表
+const REGION_KEYWORDS = {
+    "台北": ["臺北", "台北"],
+    "新北": ["新北"],
+    "桃園": ["桃園"],
+    "台中": ["臺中", "台中"],
+    "台南": ["臺南", "台南"],
+    "高雄": ["高雄"],
+    "基隆": ["基隆"],
+    "新竹": ["新竹"],
+    "苗栗": ["苗栗"],
+    "彰化": ["彰化"],
+    "南投": ["南投"],
+    "雲林": ["雲林"],
+    "嘉義": ["嘉義"],
+    "屏東": ["屏東"],
+    "宜蘭": ["宜蘭"],
+    "花蓮": ["花蓮"],
+    "台東": ["臺東", "台東"],
+    "澎湖": ["澎湖"],
+    "金門": ["金門"],
+    "連江": ["連江", "馬祖"],
+};
+// 依日期列出標案（支援地區和關鍵字過濾）
+export async function listByDate(date, typeFilter, limit, region, keyword) {
     const url = `${API_BASE}/listbydate?date=${date}`;
-    const response = await axios.get(url, { timeout: 15000 });
+    const response = await axios.get(url, { timeout: 30000 });
     const records = response.data.records;
     if (!records || records.length === 0) {
         return `${date} 沒有標案公告。`;
     }
     let filtered = records;
+    // 過濾公告類型
     if (typeFilter) {
-        filtered = records.filter((r) => r.brief.type.includes(typeFilter));
+        filtered = filtered.filter((r) => r.brief.type.includes(typeFilter));
+    }
+    // 過濾地區
+    if (region) {
+        const regionKeywords = REGION_KEYWORDS[region] || [region];
+        filtered = filtered.filter((r) => {
+            const unitName = r.unit_name || "";
+            return regionKeywords.some((kw) => unitName.includes(kw));
+        });
+    }
+    // 過濾關鍵字（標題）
+    if (keyword) {
+        const keywords = keyword.split(/[,，\s]+/).filter(Boolean);
+        filtered = filtered.filter((r) => {
+            const title = r.brief.title || "";
+            return keywords.some((kw) => title.includes(kw));
+        });
     }
     const sorted = filtered.slice(0, limit);
     const formattedDate = `${date.slice(0, 4)}/${date.slice(4, 6)}/${date.slice(6, 8)}`;
-    let table = `### ${formattedDate} 標案公告（共 ${sorted.length} 筆）\n\n`;
+    // 建立過濾條件描述
+    const filterDesc = [];
+    if (region)
+        filterDesc.push(`地區：${region}`);
+    if (keyword)
+        filterDesc.push(`關鍵字：${keyword}`);
+    if (typeFilter)
+        filterDesc.push(`類型：${typeFilter}`);
+    const filterInfo = filterDesc.length > 0 ? `（${filterDesc.join("、")}）` : "";
+    let table = `### ${formattedDate} 標案公告${filterInfo}（共 ${sorted.length} 筆，原始 ${records.length} 筆）\n\n`;
+    if (sorted.length === 0) {
+        table += `找不到符合條件的標案。\n`;
+        table += `\n> 提示：可嘗試放寬搜尋條件，或使用不同的關鍵字。`;
+        return table;
+    }
     table += "| 類型 | 標案名稱 | 機關 | 案號 |\n";
     table += "| :--- | :--- | :--- | :--- |\n";
     for (const t of sorted) {
         const title = t.brief.title.length > 40 ? t.brief.title.slice(0, 40) + "..." : t.brief.title;
-        table += `| ${t.brief.type} | ${title} | ${t.unit_name} | ${t.job_number} |\n`;
+        table += `| ${t.brief.type} | ${title} | ${t.unit_name || "-"} | ${t.job_number} |\n`;
     }
-    // 統計公告類型
-    const typeCounts = {};
-    records.forEach((r) => {
-        typeCounts[r.brief.type] = (typeCounts[r.brief.type] || 0) + 1;
-    });
-    table += `\n### 公告類型統計\n`;
-    Object.entries(typeCounts)
-        .sort((a, b) => b[1] - a[1])
-        .forEach(([type, count]) => {
-        table += `- ${type}: ${count} 筆\n`;
-    });
+    // 只在沒有過濾條件時顯示統計
+    if (!region && !keyword && !typeFilter) {
+        const typeCounts = {};
+        records.forEach((r) => {
+            typeCounts[r.brief.type] = (typeCounts[r.brief.type] || 0) + 1;
+        });
+        table += `\n### 公告類型統計\n`;
+        Object.entries(typeCounts)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([type, count]) => {
+            table += `- ${type}: ${count} 筆\n`;
+        });
+    }
+    table += `\n> 使用 \`get_tender_detail\` 查詢詳情，需提供 unit_id 和 job_number`;
     return table;
 }
 // 依機關列出標案
