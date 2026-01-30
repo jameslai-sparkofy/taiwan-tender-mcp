@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "taiwan_tender": {
+      "command": "node",
+      "args": ["C:/claude/TW tender MCP/taiwan-tender-mcp/build/index.js"]
+    }
+  }
+}
