@@ -2,6 +2,50 @@
 
 台灣政府標案查詢 MCP 伺服器，串接政府電子採購網 API。
 
+## 安裝方式
+
+### 方法一：npx 直接使用（推薦）
+
+在 Claude Desktop 設定檔中加入：
+
+```json
+{
+  "mcpServers": {
+    "taiwan_tender": {
+      "command": "npx",
+      "args": ["-y", "github:jameslai-sparkofy/taiwan-tender-mcp"]
+    }
+  }
+}
+```
+
+### 方法二：本地安裝
+
+```bash
+git clone https://github.com/jameslai-sparkofy/taiwan-tender-mcp.git
+cd taiwan-tender-mcp
+npm install
+npm run build
+```
+
+然後在設定檔中使用本地路徑：
+
+```json
+{
+  "mcpServers": {
+    "taiwan_tender": {
+      "command": "node",
+      "args": ["/path/to/taiwan-tender-mcp/build/index.js"]
+    }
+  }
+}
+```
+
+## Claude Desktop 設定檔位置
+
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
 ## 功能
 
 提供 6 個工具：
@@ -14,33 +58,6 @@
 | `list_tenders_by_date` | 列出指定日期的標案 |
 | `list_tenders_by_unit` | 列出指定機關的標案 |
 | `list_categories` | 列出標的分類代碼 |
-
-## 安裝
-
-```bash
-cd taiwan-tender-mcp
-npm install
-npm run build
-```
-
-## 設定 Claude Desktop
-
-編輯 Claude Desktop 設定檔：
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-加入以下設定：
-
-```json
-{
-  "mcpServers": {
-    "taiwan_tender": {
-      "command": "node",
-      "args": ["C:/claude/TW tender MCP/taiwan-tender-mcp/build/index.js"]
-    }
-  }
-}
-```
 
 ## 使用範例
 
